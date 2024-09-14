@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Details</title>
+    <style>
+        body {
+            font-family: "Source Sans Pro", Arial, sans-serif;
+            background-color: #121212;
+            color: white;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #1f1f1f;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .movie-details {
+            display: flex;
+            align-items: flex-start;
+        }
+        .movie-poster {
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+        .movie-info {
+            flex-grow: 1;
+        }
+        .movie-info p {
+            margin: 5px 0;
+        }
+        .movie-info h2 {
+            margin: 10px 0;
+        }
+        .movie-info ul {
+            list-style: none;
+            padding: 0;
+        }
+        .movie-info ul li {
+            margin-bottom: 5px;
+        }
+        #add-to-favorites {
+            background-color: #000000;
+            border: none;
+            color: #f4c518;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        #add-to-favorites:hover {
+            background-color: #1a1a1a;
+        }
+    </style>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="search-bar-placeholder"></div>
+    <div class="container">
+        <h1>Movie Details</h1>
+        <div class="movie-details"></div>
+    </div>
+
+    <script>
+        fetch('search-bar.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('search-bar-placeholder').innerHTML = data;
+            })
+            .catch(error => console.error('Error fetching search bar:', error));
+    </script>
+    <script>
+        const apiBaseUrl = "https://api.themoviedb.org/3";
+        const apiKey = "0cbba2de0cef4797f5b50b633a405395";
+    
+        async function fetchMovieDetails(movieId) {
+            const response = await fetch(`${apiBaseUrl}/movie/${movieId}?api_key=${apiKey}&append_to_response=credits`);
+            const movieDetails = await response.json();
+            displayMovieDetails(movieDetails);
+        }
+        
+        function addToFavorites() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const movieId = urlParams.get('id');
+
+            if (movieId) {
+                let favorites = localStorage.getItem('favorites');
+                if (!favorites) {
+                    favorites = [];
+                } else {
+                    favorites = JSON.parse(favorites);
+                }
+                if (!favorites.includes(movieId)) {
+                    favorites.push(movieId);
+                    localStorage.setItem('favorites', JSON.stringify(favorites));
+                    alert('Movie added to favorites!');
+                } else {
+                    alert('Movie already in favorites!');
+                }
+            } else {
+                alert('Invalid movie!');
+            }
+        }
+
+    
+        function displayMovieDetails(movieDetails) {
+    const movieDetailsContainer = document.querySelector('.movie-details');
+    const { title, poster_path, release_date, vote_average, vote_count, popularity, overview, credits, original_language, revenue, budget, runtime, genres, production_companies, production_countries, tagline, status, certification, homepage } = movieDetails;
+
+    const displayIfAvailable = (value) => value ? value : "Not available";
+
+    movieDetailsContainer.innerHTML = `
+        <img src="https://image.tmdb.org/t/p/w300${poster_path}" class="movie-poster">
+        <div class="movie-info">
+            <p><strong>Title:</strong> ${displayIfAvailable(title)}</p>
+            <p><strong>Release Date:</strong> ${displayIfAvailable(release_date)}</p>
+            <p><strong>Rating:</strong> ${displayIfAvailable(vote_average)}</p>
+            <p><strong>Votes:</strong> ${displayIfAvailable(vote_count)}</p>
+            <p><strong>Popularity:</strong> ${displayIfAvailable(popularity)}</p>
+            <p><strong>Language:</strong> ${displayIfAvailable(original_language)}</p>
+            <p><strong>Overview:</strong> ${displayIfAvailable(overview)}</p>
+            <p><strong>Total Collection:</strong> $${displayIfAvailable(revenue ? revenue.toLocaleString() : "0")}</p>
+            <p><strong>Budget:</strong> $${displayIfAvailable(budget ? budget.toLocaleString() : "0")}</p>
+            <p><strong>Runtime:</strong> ${displayIfAvailable(runtime ? runtime + " minutes" : "Not available")}</p>
+            <p><strong>Genres:</strong> ${displayIfAvailable(genres ? genres.map(genre => genre.name).join(', ') : "Not available")}</p>
+            <p><strong>Production Companies:</strong> ${displayIfAvailable(production_companies ? production_companies.map(company => company.name).join(', ') : "Not available")}</p>
+            <p><strong>Production Countries:</strong> ${displayIfAvailable(production_countries ? production_countries.map(country => country.name).join(', ') : "Not available")}</p>
+            <p><strong>Release Status:</strong> ${displayIfAvailable(status)}</p>
+            <p><strong>Homepage:</strong> ${homepage ? `<a href="${homepage}" target="_blank">${homepage}</a>` : "Not available"}</p>
+            <h2>Cast:</h2>
+            <ul>
+                ${displayIfAvailable(credits && credits.cast ? credits.cast.slice(0, 5).map(actor => `<li>${actor.name}</li>`).join('') : "Not available")}
+            </ul>
+            <h2>Directors:</h2>
+            <ul>
+                ${displayIfAvailable(credits && credits.crew ? credits.crew.filter(crewMember => crewMember.job === "Director").map(director => `<li>${director.name}</li>`).join('') : "Not available")}
+            </ul>
+            <h2>Producers:</h2>
+            <ul>
+                ${displayIfAvailable(credits && credits.crew ? credits.crew.filter(crewMember => crewMember.job === "Producer").map(producer => `<li>${producer.name}</li>`).join('') : "Not available")}
+            </ul>
+            <h2>Writers:</h2>
+            <ul>
+                ${displayIfAvailable(credits && credits.crew ? credits.crew.filter(crewMember => crewMember.job === "Screenplay").slice(0, 3).map(writer => `<li>${writer.name}</li>`).join('') : "Not available")}
+            </ul>
+            
+            <button id="add-to-favorites" onclick="addToFavorites()">Add to Favorites</button>
+        </div>
+    `;
+}
+
+
+        // Get the movieId from the URL query parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const movieId = urlParams.get('id');
+
+        if (movieId) {
+            fetchMovieDetails(movieId);
+        } else {
+            // Redirect to homepage if movieId is not provided
+            window.location.href = 'index.html';
+        }
+
+        
+    </script>
+
+</body>
+</html>
